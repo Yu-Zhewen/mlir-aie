@@ -6,6 +6,108 @@ Types and operations for external LLVM dialect
 
 ## Operations
 
+### `xllvm.intr.aie2.acc32.v16.I256.ups` (::xilinx::xllvm::Acc32V16I256UpsIntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of 16-bit signless integer values of length 16
+| `shift` | 32-bit signless integer
+| `sign` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
+### `xllvm.intr.aie2.acc32.v32.I256.ups` (::xilinx::xllvm::Acc32V32I256UpsIntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of 8-bit signless integer values of length 32
+| `shift` | 32-bit signless integer
+| `sign` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
+### `xllvm.intr.aie2.acc32.v32.I512.ups` (::xilinx::xllvm::Acc32V32I512UpsIntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of 16-bit signless integer values of length 32
+| `shift` | 32-bit signless integer
+| `sign` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
+### `xllvm.intr.aie2.acc64.v16.I256.ups` (::xilinx::xllvm::Acc64V16I256UpsIntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of 16-bit signless integer values of length 16
+| `shift` | 32-bit signless integer
+| `sign` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
+### `xllvm.intr.aie2.acc64.v16.I512.ups` (::xilinx::xllvm::Acc64V16I512UpsIntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of 32-bit signless integer values of length 16
+| `shift` | 32-bit signless integer
+| `sign` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
+### `xllvm.intr.aie2.acc64.v8.I256.ups` (::xilinx::xllvm::Acc64V8I256UpsIntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of 32-bit signless integer values of length 8
+| `shift` | 32-bit signless integer
+| `sign` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
 ### `xllvm.intr.aie2.bf.mac16.conf` (::xilinx::xllvm::MacConfBF16IntrOp)
 
 #### Operands:
@@ -109,6 +211,22 @@ Types and operations for external LLVM dialect
 | `res` | LLVM dialect-compatible type
 
 
+### `xllvm.intr.aie2.ext.I256.I1024` (::xilinx::xllvm::ExtI256I1024IntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of 32-bit signless integer values of length 32
+| `idx` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
 ### `xllvm.intr.aie2.ext.I256.I512` (::xilinx::xllvm::ExtI256I512IntrOp)
 
 #### Operands:
@@ -117,6 +235,37 @@ Types and operations for external LLVM dialect
 | :-----: | ----------- |
 | `src` | vector of 32-bit signless integer values of length 16
 | `idx` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
+### `xllvm.intr.aie2.ext.I512.I1024` (::xilinx::xllvm::ExtI512I1024IntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of 32-bit signless integer values of length 32
+| `idx` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
+### `xllvm.intr.aie2.extract.I128.I512` (::xilinx::xllvm::ExtI128I512IntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of 32-bit signless integer values of length 16
 
 #### Results:
 
@@ -360,6 +509,21 @@ Types and operations for external LLVM dialect
 | `res` | LLVM dialect-compatible type
 
 
+### `xllvm.intr.aie2.v16bf16.to.v16accfloat` (::xilinx::xllvm::Vector16BF16ToV16AccFloatIntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `src` | vector of bfloat16 type values of length 16
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
 ### `xllvm.intr.aie2.v16int32` (::xilinx::xllvm::UndefV16I32IntrOp)
 
 #### Results:
@@ -487,6 +651,22 @@ Types and operations for external LLVM dialect
 | `src` | vector of 8-bit signless integer values of length 64
 | `idx` | 32-bit signless integer
 | `sign` | 32-bit signless integer
+
+#### Results:
+
+| Result | Description |
+| :----: | ----------- |
+| `res` | LLVM dialect-compatible type
+
+
+### `xllvm.intr.aie2.vmax.ltbf16` (::xilinx::xllvm::VectorMaxLtBf16IntrOp)
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `lhs` | vector of bfloat16 type values of length 32
+| `rhs` | vector of bfloat16 type values of length 32
 
 #### Results:
 
