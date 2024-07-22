@@ -29,7 +29,7 @@
 #include "mlir/Transforms/Passes.h"
 #include "llvm/ADT/SmallSet.h"
 #include "llvm/ADT/TypeSwitch.h"
-
+#include "llvm/Support/raw_ostream.h"
 #include <bitset>
 #include <optional>
 #include <tuple>
@@ -627,6 +627,70 @@ struct ConvertMulAddToAIEVecFMAElemOpPattern
   unsigned shiftParam;
 };
 
+// Convert `vector.fma` to `aievec.mac_elem`. Only `vector<16xf32>` and
+// `vector<16xbf16>` operand types are supported. In the case of vectors with
+// `f32` elemental type, this pattern will try to match `bf16` to `f32`
+// widening ops in the `lhs` and `rhs` operands, or fail otherwise.
+// TODO: When sign extensions are not found, a conversion from `f32` to `bf16`
+// TODO: can be inserted to emulate `f32` fma with `bf16` logic.
+struct ConvertVectorFMAOpToAIEVecFMAElemOpPattern
+    : OpConversionPattern<vector::FMAOp> {
+  using OpConversionPattern::OpConversionPattern;
+
+  ConvertVectorFMAOpToAIEVecFMAElemOpPattern(MLIRContext *context,
+                                             unsigned shiftParam = 0)
+      : OpConversionPattern(context), shiftParam(shiftParam) {}
+
+  LogicalResult
+  matchAndRewrite(vector::FMAOp fmaOp, OpAdaptor adaptor,
+                  ConversionPatternRewriter &rewriter) const override {
+    // Verify the vector type is supported by AIE2
+    auto resVecTy = cast<VectorType>(fmaOp.getType());
+    auto resElemTy = resVecTy.getElementType();
+    unsigned numElems = getVectorLaneSize(resVecTy);
+
+    if (numElems != 16 || (!resElemTy.isF32() && !resElemTy.isBF16()))
+      return rewriter.notifyMatchFailure(
+          fmaOp, "Unsupported operand types in vector.fma lowering.");
+
+    Value lhs = adaptor.getLhs();
+    Value rhs = adaptor.getRhs();
+    Value acc = adaptor.getAcc();
+    if (resElemTy.isBF16())
+      acc = rewriter.create<aievec::UPSOp>(
+          fmaOp.getLoc(), VectorType::get({16}, rewriter.getF32Type()), acc,
+          shiftParam);
+    else {
+      lhs = getSourceOfWideningOp(lhs).value_or(nullptr);
+      rhs = getSourceOfWideningOp(rhs).value_or(nullptr);
+      if (!lhs || !rhs)
+        return rewriter.notifyMatchFailure(
+            fmaOp, "vector.fma operands are f32, and they don't come from "
+                   "arith.extf on bf16; can't lower to aievec.");
+      if (!cast<VectorType>(lhs.getType()).getElementType().isBF16() ||
+          !cast<VectorType>(rhs.getType()).getElementType().isBF16())
+        return rewriter.notifyMatchFailure(
+            fmaOp, "vector.fma operands come from arith.extf, but the source "
+                   "of the widening op is not bf16; can't lower to aievec.");
+    }
+    Value newOp = rewriter.create<aievec::FMAElemOp>(
+        fmaOp.getLoc(), acc.getType(), lhs, rhs, acc, /*fmsub=*/false);
+
+    if (resElemTy.isBF16()) {
+      auto shiftParamOp = rewriter.create<arith::ConstantOp>(
+          fmaOp.getLoc(), rewriter.getI32IntegerAttr(shiftParam));
+      newOp = rewriter.create<aievec::SRSOp>(fmaOp.getLoc(), resVecTy, newOp,
+                                             shiftParamOp);
+    }
+
+    rewriter.replaceOp(fmaOp, newOp);
+
+    return success();
+  }
+
+  unsigned shiftParam;
+};
+
 // This pattern replaces `arith.mulf` on vectors with
 // `aievec.mul_elem`. This pattern works for AIE2.
 struct ConvertMulFToAIEVecMulElemOpPattern
@@ -678,21 +742,37 @@ struct ConvertMulFToAIEVecMulElemOpPattern
     }
 
     // Prepare lhr/rhs for the aievec.mul_elem op
-    VectorType targetInputType =
-        createVectorType(512 / lBitWidth, lSrcType.getElementType());
-    if (rBitWidth > lBitWidth)
-      targetInputType =
-          createVectorType(512 / rBitWidth, rSrcType.getElementType());
-    auto lValConverted = convertValueToTargetTypeAIE2(rewriter, mulOp.getLoc(),
-                                                      lval, targetInputType);
-    auto rValConverted = convertValueToTargetTypeAIE2(rewriter, mulOp.getLoc(),
-                                                      rval, targetInputType);
-    if (!lValConverted || !rValConverted)
+    unsigned bitWidth = (rBitWidth > lBitWidth) ? rBitWidth : lBitWidth;
+    Type srcElemType = (rBitWidth > lBitWidth) ? rSrcType.getElementType()
+                                               : lSrcType.getElementType();
+    unsigned numLanes = 0;
+    if (isa<FloatType>(srcElemType) && (bitWidth == 16 || bitWidth == 32)) {
+      numLanes = 16;
+    } else if (isa<IntegerType>(srcElemType) &&
+               (bitWidth == 8 || bitWidth == 16)) {
+      numLanes = 32;
+    } else if (isa<IntegerType>(srcElemType) && (bitWidth == 32)) {
+      numLanes = 16;
+    } else {
+      return failure();
+    }
+    VectorType targetInputType = createVectorType(numLanes, srcElemType);
+    if (targetInputType != lSrcType) {
+      lval = convertValueToTargetTypeAIE2(rewriter, mulOp.getLoc(), lval,
+                                          targetInputType)
+                 .value();
+    }
+    if (targetInputType != rSrcType) {
+      rval = convertValueToTargetTypeAIE2(rewriter, mulOp.getLoc(), rval,
+                                          targetInputType)
+                 .value();
+    }
+    if (!lval || !rval)
       return failure();
 
     // Create an aievec.mul_elem op
-    auto mulElemOp = rewriter.create<aievec::MulElemOp>(
-        mulOp.getLoc(), accType, *lValConverted, *rValConverted);
+    auto mulElemOp =
+        rewriter.create<aievec::MulElemOp>(mulOp.getLoc(), accType, lval, rval);
 
     // Create an aievec.cast or an aievec.srs op
     auto mulElemResultType = mulElemOp.getType();
@@ -752,8 +832,10 @@ struct ConvertMulIToAIEVecMulElemOpPattern
     // Decide the accType for aievec.mul_elem based on mulOp's lhs & rhs
     auto lval = adaptor.getLhs();
     auto rval = adaptor.getRhs();
+
     lval = getSourceOfWideningOp(lval).value_or(lval);
     rval = getSourceOfWideningOp(rval).value_or(rval);
+
     auto lSrcType = cast<VectorType>(lval.getType());
     auto rSrcType = cast<VectorType>(rval.getType());
     unsigned lBitWidth = lSrcType.getElementType().getIntOrFloatBitWidth();
@@ -764,22 +846,37 @@ struct ConvertMulIToAIEVecMulElemOpPattern
     }
 
     // Prepare lhr/rhs for the aievec.mul_elem op
-    VectorType targetInputType =
-        createVectorType(512 / lBitWidth, lSrcType.getElementType());
-    if (rBitWidth > lBitWidth) {
-      targetInputType =
-          createVectorType(512 / rBitWidth, rSrcType.getElementType());
+    unsigned bitWidth = (rBitWidth > lBitWidth) ? rBitWidth : lBitWidth;
+    Type srcElemType = (rBitWidth > lBitWidth) ? rSrcType.getElementType()
+                                               : lSrcType.getElementType();
+    unsigned numLanes = 0;
+    if (isa<FloatType>(srcElemType) && (bitWidth == 16 || bitWidth == 32)) {
+      numLanes = 16;
+    } else if (isa<IntegerType>(srcElemType) &&
+               (bitWidth == 8 || bitWidth == 16)) {
+      numLanes = 32;
+    } else if (isa<IntegerType>(srcElemType) && (bitWidth == 32)) {
+      numLanes = 16;
+    } else {
+      return failure();
     }
-    auto lValConverted = convertValueToTargetTypeAIE2(rewriter, mulOp.getLoc(),
-                                                      lval, targetInputType);
-    auto rValConverted = convertValueToTargetTypeAIE2(rewriter, mulOp.getLoc(),
-                                                      rval, targetInputType);
-    if (!lValConverted || !rValConverted)
+    VectorType targetInputType = createVectorType(numLanes, srcElemType);
+    if (targetInputType != lSrcType) {
+      lval = convertValueToTargetTypeAIE2(rewriter, mulOp.getLoc(), lval,
+                                          targetInputType)
+                 .value();
+    }
+    if (targetInputType != rSrcType) {
+      rval = convertValueToTargetTypeAIE2(rewriter, mulOp.getLoc(), rval,
+                                          targetInputType)
+                 .value();
+    }
+    if (!lval || !rval)
       return failure();
 
     // Create an aievec.mul_elem op
-    auto mulElemOp = rewriter.create<aievec::MulElemOp>(
-        mulOp.getLoc(), accType, *lValConverted, *rValConverted);
+    auto mulElemOp =
+        rewriter.create<aievec::MulElemOp>(mulOp.getLoc(), accType, lval, rval);
 
     // Create an aievec.cast or an aievec.srs op
     auto mulElemResultType = mulElemOp.getType();
@@ -2960,6 +3057,7 @@ static void populateAIEVecV2ConversionPatterns(RewritePatternSet &patterns,
       FoldVectorExtractAndBroadcastToAIEBroadcast,
       ConvertBroadcastToAIEBroadcast,
       ConvertMulAddToAIEVecFMAElemOpPattern,
+      ConvertVectorFMAOpToAIEVecFMAElemOpPattern,
       LowerVectorExtractStridedSliceOpAIE2Pattern,
       LowerVectorTransposeOpToAIEVecShuffleOpPattern
       >(patterns.getContext());
@@ -3641,7 +3739,8 @@ static void configureAIEVecV2Legalizations(ConversionTarget &target,
         return false;
       });
 
-  target.addIllegalOp<vector::ContractionOp, vector::TransposeOp>();
+  target.addIllegalOp<vector::ContractionOp, vector::TransposeOp,
+                      vector::FMAOp>();
 }
 
 //===----------------------------------------------------------------------===//
