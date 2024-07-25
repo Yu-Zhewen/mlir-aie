@@ -348,8 +348,8 @@ Pathfinder::dijkstraShortestPaths(SwitchboxNode *src) {
 // If no legal routing can be found after maxIterations, returns empty vector.
 std::optional<std::map<PathEndPoint, SwitchSettings>>
 Pathfinder::findPaths(const int maxIterations) {
-  LLVM_DEBUG(llvm::dbgs() << "Begin Pathfinder::findPaths\n");
-  int iterationCount = 0;
+  LLVM_DEBUG(llvm::dbgs() << "\t---Begin Pathfinder::findPaths---\n");
+  int iterationCount = -1;
   std::map<PathEndPoint, SwitchSettings> routingSolution;
 
   // initialize all Channel histories to 0
@@ -361,8 +361,6 @@ Pathfinder::findPaths(const int maxIterations) {
   bool isLegal = true;
 
   do {
-    LLVM_DEBUG(llvm::dbgs()
-               << "Begin findPaths iteration #" << iterationCount << "\n");
     // update demand on all channels
     for (auto &ch : edges) {
       double history = 1.0 + OVER_CAPACITY_COEFF * overCapacity[&ch];
@@ -377,6 +375,9 @@ Pathfinder::findPaths(const int maxIterations) {
                  << " iterations)...unable to find routing for flows.\n");
       return std::nullopt;
     }
+
+    LLVM_DEBUG(llvm::dbgs() << "\t\t---Begin findPaths iteration #"
+                            << iterationCount << "---\n");
 
     // "rip up" all routes
     routingSolution.clear();
@@ -526,7 +527,22 @@ Pathfinder::findPaths(const int maxIterations) {
       routingSolution[src] = switchSettings;
     }
 
+    int illegalEdges = 0;
+    int totalPathLength = 0;
+    for (auto &ch : edges) {
+      totalPathLength += ch.usedCapacity;
+      if (ch.usedCapacity > ch.maxCapacity) {
+        illegalEdges++;
+      }
+    }
+    LLVM_DEBUG(llvm::dbgs()
+               << "\t\t---End findPaths iteration #" << iterationCount
+               << " , illegal edges count = " << illegalEdges
+               << ", total path length = " << totalPathLength << "---\n");
+
   } while (!isLegal); // continue iterations until a legal routing is found
+
+  LLVM_DEBUG(llvm::dbgs() << "\t---End Pathfinder::findPaths---\n");
 
   return routingSolution;
 }
