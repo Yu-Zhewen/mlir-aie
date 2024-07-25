@@ -530,8 +530,8 @@ Pathfinder::findPaths(const int maxIterations) {
     int illegalEdges = 0;
     int totalPathLength = 0;
     for (auto &ch : edges) {
-      totalPathLength += ch.usedCapacity;
-      if (ch.usedCapacity > ch.maxCapacity) {
+      totalPathLength += usedCapacity[&ch];
+      if (usedCapacity[&ch] > ch.maxCapacity) {
         illegalEdges++;
       }
     }
