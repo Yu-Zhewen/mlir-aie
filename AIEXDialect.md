@@ -479,6 +479,33 @@ address patch operator
 </table>
 
 
+### `aiex.npu.blockwrite` (::xilinx::AIEX::NpuBlockWriteOp)
+
+_Blockwrite operator_
+
+
+Syntax:
+
+```
+operation ::= `aiex.npu.blockwrite` `(` $data `)` attr-dict `:` type($data)
+```
+
+blockwrite operator
+
+#### Attributes:
+
+<table>
+<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr><td><code>address</code></td><td>::mlir::IntegerAttr</td><td>32-bit unsigned integer attribute</td></tr>
+</table>
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `data` | memref of any type values
+
+
 ### `aiex.npu.dma_memcpy_nd` (::xilinx::AIEX::NpuDmaMemcpyNdOp)
 
 _Half DMA operator_
@@ -855,6 +882,25 @@ A route operation that routes one herd to another.
 | :-----: | ----------- |
 | `sourceHerds` | index
 | `destHerds` | index
+
+
+### `aiex.runtime_sequence` (::xilinx::AIEX::RuntimeSequenceOp)
+
+_Program the configuration co-processor of the AI Engine array_
+
+Instructions in this operation allow for runtime (re-)configuration of the AI Engine array, such as configuring data movement buffer descriptors.
+These instructions will execute on the configuration co-processor of the AI Engine array.
+
+Typically, these instructions include configuring the data transfers between host and AIE array on the shims.
+The input arguments are arguments passed in from the host at kernel invocation time. This may include buffers on the host.
+
+Traits: `HasParent<AIE::DeviceOp>`, `NoTerminator`
+
+#### Operands:
+
+| Operand | Description |
+| :-----: | ----------- |
+| `args` | variadic of any type
 
 
 ### `aiex.select` (::xilinx::AIEX::SelectOp)
