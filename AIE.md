@@ -61,6 +61,29 @@ Interfaces: `InferTypeOpInterface`
 &laquo;unnamed&raquo; | index
 
 
+### `aie.bd_chain` (::xilinx::AIE::BDChainOp)
+
+_Definition of a Parametrizable Chain of Buffer Descriptors_
+
+This operation allows you to define buffer descriptor chains with parametrizable inputs. 
+This is useful for common patterns such as double buffering (ping-pong) that may look identical but use different input/output buffers and locks.
+Currently, only buffers and locks are parametrizable.
+
+Once defined, an abstract BD chain can be used elsewhere using AIEX ops in the runtime sequence. 
+In the future, abstract BD chains will also be usable elsewhere, inside the static configuration.
+At its usage sites, the abstract BD chain will be concretized with the given input arguments.
+
+Interfaces: `Symbol`
+
+#### Attributes:
+
+<table>
+<tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
+<tr><td><code>sym_name</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
+<tr><td><code>entry_arg_types_attr</code></td><td>::mlir::TypeAttr</td><td>type attribute of tuple</td></tr>
+</table>
+
+
 ### `aie.buffer` (::xilinx::AIE::BufferOp)
 
 _Declare a buffer_
@@ -423,13 +446,6 @@ Interfaces: `InferTypeOpInterface`, `OpAsmOpInterface`
 
 _Declare a dma buffer descriptor op_
 
-
-Syntax:
-
-```
-operation ::= `aie.dma_bd` `(` $buffer `:` type($buffer) (`,` $offset^)? (`,` $len^)? (`,` $dimensions^)? (`,` $pad_dimensions^)? (`,` `pad_value` `=` $pad_value^)? `)` attr-dict
-```
-
 This operation describes a buffer descriptor for DMA operations. In particular, it specifies
 what buffer to use, and optionally:
 
@@ -536,8 +552,6 @@ counts can be supplied to the `dma_bd` through an optional argument, an array of
 `bd_pad_layout<const_pad_before, const_pad_after>`, followed by an optional argument `const_val` (default 
 is 0). All counts are expressed in multiples of the element width.
 
-Traits: `HasParent<MemOp, MemTileDMAOp, ShimDMAOp, DMAOp>`
-
 #### Attributes:
 
 <table>
@@ -548,6 +562,9 @@ Traits: `HasParent<MemOp, MemTileDMAOp, ShimDMAOp, DMAOp>`
 <tr><td><code>pad_dimensions</code></td><td>::xilinx::AIE::BDPadLayoutArrayAttr</td><td></td></tr>
 <tr><td><code>pad_value</code></td><td>::mlir::IntegerAttr</td><td>32-bit signless integer attribute</td></tr>
 <tr><td><code>bd_id</code></td><td>::mlir::IntegerAttr</td><td>32-bit signless integer attribute</td></tr>
+<tr><td><code>packet</code></td><td>::xilinx::AIE::PacketInfoAttr</td><td>
+    Tuple encoding the type and header of a packet;
+  </td></tr>
 <tr><td><code>next_bd_id</code></td><td>::mlir::IntegerAttr</td><td>32-bit signless integer attribute</td></tr>
 </table>
 
@@ -1104,7 +1121,7 @@ Example:
   }
 ```
 
-Traits: `HasParent<MemOp, MemTileDMAOp, mlir::func::FuncOp, ShimDMAOp>`, `Terminator`
+Traits: `Terminator`
 
 #### Successors:
 
@@ -2256,6 +2273,29 @@ Syntax:
 | :-------: | :-------: | ----------- |
 | const_pad_before | `uint16_t` |  |
 | const_pad_after | `uint16_t` |  |
+
+### PacketInfoAttr
+
+
+    Tuple encoding the type and header of a packet;
+  
+
+Syntax:
+
+```
+#aie.packet_info<
+  uint16_t,   # pkt_type
+  uint16_t   # pkt_id
+>
+```
+
+
+#### Parameters:
+
+| Parameter | C++ type | Description |
+| :-------: | :-------: | ----------- |
+| pkt_type | `uint16_t` |  |
+| pkt_id | `uint16_t` |  |
 
 ## Type constraints
 
