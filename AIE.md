@@ -73,6 +73,8 @@ Once defined, an abstract BD chain can be used elsewhere using AIEX ops in the r
 In the future, abstract BD chains will also be usable elsewhere, inside the static configuration.
 At its usage sites, the abstract BD chain will be concretized with the given input arguments.
 
+Traits: `SkipAccessibilityCheckTrait`
+
 Interfaces: `Symbol`
 
 #### Attributes:
@@ -80,7 +82,6 @@ Interfaces: `Symbol`
 <table>
 <tr><th>Attribute</th><th>MLIR Type</th><th>Description</th></tr>
 <tr><td><code>sym_name</code></td><td>::mlir::StringAttr</td><td>string attribute</td></tr>
-<tr><td><code>entry_arg_types_attr</code></td><td>::mlir::TypeAttr</td><td>type attribute of tuple</td></tr>
 </table>
 
 
@@ -978,6 +979,7 @@ Interfaces: `InferTypeOpInterface`
 * Trace (`Trace`)
 * Ctrl (`Ctrl`){{% /markdown %}}</details></td></tr>
 <tr><td><code>dest_channel</code></td><td>::mlir::IntegerAttr</td><td>32-bit signless integer attribute whose minimum value is 0</td></tr>
+<tr><td><code>keep_pkt_header</code></td><td>::mlir::BoolAttr</td><td>bool attribute</td></tr>
 </table>
 
 #### Operands:
@@ -1238,6 +1240,7 @@ Interfaces: `Symbol`
 <tr><td><code>dimensionsFromStreamPerConsumer</code></td><td>::xilinx::AIE::BDDimLayoutArrayArrayAttr</td><td></td></tr>
 <tr><td><code>via_DMA</code></td><td>::mlir::BoolAttr</td><td>bool attribute</td></tr>
 <tr><td><code>plio</code></td><td>::mlir::BoolAttr</td><td>bool attribute</td></tr>
+<tr><td><code>via_shared_mem</code></td><td>::mlir::IntegerAttr</td><td>32-bit signless integer attribute</td></tr>
 </table>
 
 #### Operands:
