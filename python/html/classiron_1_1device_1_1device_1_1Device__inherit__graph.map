@@ -1,0 +1,21 @@
+<map id="iron.device.device.Device" name="iron.device.device.Device">
+<area shape="rect" id="Node000001" title=" " alt="" coords="345,129,536,155"/>
+<area shape="rect" id="Node000004" href="$classiron_1_1device_1_1device_1_1NPUBase.html" title=" " alt="" coords="587,104,793,129"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="549,128,587,124,587,130,550,134"/>
+<area shape="rect" id="Node000010" href="$classiron_1_1device_1_1device_1_1XCVC1902.html" title=" " alt="" coords="584,153,796,179"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="550,150,584,153,583,158,550,155"/>
+<area shape="rect" id="Node000002" href="$classiron_1_1resolvable_1_1Resolvable.html" title=" " alt="" coords="103,129,297,155"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="311,139,345,139,345,145,311,145"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,129,55,155"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="68,139,102,139,102,145,68,145"/>
+<area shape="rect" id="Node000005" href="$classiron_1_1device_1_1device_1_1NPU1Col1.html" title=" " alt="" coords="844,5,1055,31"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="724,95,779,67,843,39,882,28,883,33,845,45,781,71,727,100"/>
+<area shape="rect" id="Node000006" href="$classiron_1_1device_1_1device_1_1NPU1Col2.html" title=" " alt="" coords="844,55,1055,80"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="770,99,881,77,882,83,771,104"/>
+<area shape="rect" id="Node000007" href="$classiron_1_1device_1_1device_1_1NPU1Col3.html" title=" " alt="" coords="844,104,1055,129"/>
+<area shape="poly" id="edge6_Node000004_Node000007" title=" " alt="" coords="806,114,844,114,844,119,806,119"/>
+<area shape="rect" id="Node000008" href="$classiron_1_1device_1_1device_1_1NPU1Col4.html" title=" " alt="" coords="844,153,1055,179"/>
+<area shape="poly" id="edge7_Node000004_Node000008" title=" " alt="" coords="771,129,882,151,881,156,770,135"/>
+<area shape="rect" id="Node000009" href="$classiron_1_1device_1_1device_1_1NPU2.html" title=" " alt="" coords="859,203,1040,228"/>
+<area shape="poly" id="edge8_Node000004_Node000009" title=" " alt="" coords="784,132,797,138,813,151,822,164,831,177,845,189,871,200,869,205,843,194,827,181,818,167,809,155,795,143,782,137"/>
+</map>
